@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Flashcards - Funciones</title>
+
+  <!-- KaTeX CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+
+  <!-- KaTeX JS -->
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <!-- Auto-render extension -->
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters:[{left:'$$', right:'$$', display:true},{left:'\\(', right:'\\)', display:false}]})">
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #F8F9FA;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .welcome-screen {
+      background: #fff;
+      max-width: 600px;
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .welcome-screen h1 {
+      font-size: 1.8em;
+      margin-bottom: 0.5em;
+    }
+    .welcome-screen p {
+      margin-bottom: 1em;
+      line-height: 1.4;
+    }
+    .start-button {
+      background: #4A90E2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .start-button:hover {
+      background: #357ABD;
+    }
+    .flashcard-container {
+      display: none; 
+      width: 100%;
+      max-width: 600px;
+      margin-top: 30px;
+      text-align: center;
+    }
+    .timer {
+      font-size: 24px;
+      font-weight: bold;
+      color: #E74C3C;
+      margin-bottom: 20px;
+      min-height: 30px;
+    }
+    .flashcard {
+      position: relative;
+      width: 100%;
+      height: 350px;
+      perspective: 1000px;
+      margin-bottom: 20px;
+      cursor: not-allowed; /* Bloqueada mientras corre el tiempo */
+    }
+    .flashcard-inner {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+    .flashcard-front,
+    .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      overflow: auto;
+    }
+    .flashcard-back {
+      transform: rotateY(180deg);
+    }
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+    .navigation {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 30px;
+    }
+    .nav-button {
+      background: #4A90E2; 
+      color: #fff;
+      border: none; 
+      border-radius: 6px;
+      font-size: 16px; 
+      padding: 10px 20px;
+      cursor: pointer; 
+      transition: background 0.3s;
+      opacity: 0.6; 
+      display: none; 
+    }
+    .nav-button:hover {
+      background: #357ABD;
+    }
+    .nav-button.active {
+      opacity: 1;
+    }
+    .progress {
+      margin-top: 20px; 
+      text-align: center;
+    }
+    .progress-bar {
+      width: 100%; 
+      height: 10px;
+      background-color: #ddd;
+      border-radius: 5px; 
+      margin-top: 10px;
+    }
+    .progress-fill {
+      height: 100%; 
+      background-color: #4A90E2;
+      border-radius: 5px; 
+      width: 0%; 
+      transition: width 0.3s;
+    }
+    .motivation {
+      margin-top: 20px;
+      font-style: italic;
+      color: #F5A623;
+      min-height: 20px;
+    }
+    @media (max-width: 600px) {
+      .flashcard { height: 300px; }
+      .welcome-screen { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- PANTALLA DE BIENVENIDA -->
+  <div class="welcome-screen" id="welcomeScreen">
+    <h1>¡Bienvenido!</h1>
+    <p>Vamos a repasar 25 conceptos clave de Funciones. Tendrás <strong>10 segundos</strong> para reflexionar antes de ver la respuesta.</p>
+    <p>Haz clic en la tarjeta (después de esos 10s) para girarla y ver los botones de navegación.</p>
+    <button class="start-button" onclick="startFlashcards()">Iniciar Flashcards</button>
+  </div>
+
+  <!-- CONTENEDOR DE LAS FLASHCARDS -->
+  <div class="flashcard-container" id="flashcardContainer">
+    <div class="timer" id="timer"></div>
+    <div class="flashcard" id="flashcard">
+      <div class="flashcard-inner">
+        <div class="flashcard-front" id="flashcardFront"></div>
+        <div class="flashcard-back" id="flashcardBack"></div>
+      </div>
+    </div>
+    <div class="navigation">
+      <button class="nav-button" id="prevButton" onclick="previousCard()">Anterior</button>
+      <button class="nav-button" id="nextButton" onclick="nextCard()">Siguiente</button>
+    </div>
+    <div class="progress">
+      <span id="progressText">Tarjeta 1 de 25</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+    <div class="motivation" id="motivation"></div>
+  </div>
+
+  <script>
+    // 25 tarjetas: front -> pregunta, back -> respuesta (en LaTeX con KaTeX)
+    const flashcards = [
+      {
+        front: "1. ¿Qué entendemos por \\(f(x)\\)?",
+        back: "Es una correspondencia que asocia cada \\(x\\) (del dominio) con un único valor \\(f(x)\\) en el codominio."
+      },
+      {
+        front: "2. ¿Cómo se define el Dominio de una función?",
+        back: "Es el conjunto de todos los \\(x\\) para los cuales la función \\(f(x)\\) está bien definida."
+      },
+      {
+        front: "3. Distingue entre Codominio e Imagen",
+        back: "El Codominio contiene los valores posibles de salida; la Imagen (o Rango) son los valores que \\(f(x)\\) realmente toma."
+      },
+      {
+        front: "4. ¿Cuándo decimos que \\(f\\) es Inyectiva?",
+        back: "Si \\(f(x_1) = f(x_2)\\) implica \\(x_1 = x_2\\). No hay dos valores del dominio con la misma salida."
+      },
+      {
+        front: "5. Define Sobreyectividad",
+        back: "Toda salida en el codominio está alcanzada por algún \\(x\\) del dominio. Esto hace que Imagen = Codominio."
+      },
+      {
+        front: "6. ¿Qué es una función Bijectiva?",
+        back: "Es a la vez inyectiva y sobreyectiva. Cada \\(x\\) del dominio se relaciona con un \\(y\\) único, y todo \\(y\\) se alcanza."
+      },
+      {
+        front: "7. ¿En qué consiste \\(f(x)=m x + b\\)?",
+        back: "Es la forma de una función lineal de primer grado. \\(m\\) es la pendiente, \\(b\\) el intercepto con el eje Y."
+      },
+      {
+        front: "8. ¿Para qué valores de \\(x\\) se cumple la Continuidad de \\(f\\)?",
+        back: "Una \\(f\\) es continua en \\(x=a\\) si \\(\\lim_{x \\to a} f(x) = f(a)\\). Sin saltos ni rupturas."
+      },
+      {
+        front: "9. ¿Cuál es la diferencia entre Máximo Absoluto y Máximo Relativo?",
+        back: "El máximo absoluto es el mayor valor en todo el dominio, mientras que el máximo relativo sólo domina en un entorno local."
+      },
+      {
+        front: "10. ¿Qué papel juega la Pendiente \\(m\\) en una función lineal?",
+        back: "Controla la tasa de cambio de \\(f(x)\\). Si \\(m>0\\), la recta sube; si \\(m<0\\), baja."
+      },
+      {
+        front: "11. ¿En qué casos se restringe el Dominio de \\(f(x)=\\frac{P(x)}{Q(x)}\\)?",
+        back: "Cuando \\(Q(x)=0\\) para algún \\(x\\), se excluyen esos valores del dominio, pues no se puede dividir por cero."
+      },
+      {
+        front: "12. Explica la idea de una Función Definida a Trozos",
+        back: "Es aquella que usa distintas expresiones en subintervalos del dominio, adaptándose a comportamientos específicos."
+      },
+      {
+        front: "13. ¿Cuándo hablamos de Crecimiento y Decrecimiento?",
+        back: "Si al aumentar \\(x\\), crece \\(f(x)\\), la función es creciente en ese intervalo; si \\(f(x)\\) disminuye, es decreciente."
+      },
+      {
+        front: "14. ¿Cómo interpretas la Intersección con el eje X?",
+        back: "Es la(s) solución(es) de \\(f(x)=0\\). Representan los puntos donde la gráfica corta el eje X."
+      },
+      {
+        front: "15. ¿Qué significa la Intersección con el eje Y?",
+        back: "Ocurre en \\(x=0\\). Es el valor \\(f(0)\\) y representa el punto donde la gráfica corta el eje Y."
+      },
+      {
+        front: "16. Describe una Función Cuadrática",
+        back: "Tiene la forma \\(f(x)=a x^2 + b x + c\\). Su gráfica es una parábola, con \\(a\\neq 0\\)."
+      },
+      {
+        front: "17. ¿Para qué sirve el Vértice de la Parábola?",
+        back: "Es el punto de máximo o mínimo relativo de \\(f(x)=a x^2 + b x + c\\). Está en \\(x= -\\frac{b}{2a}\\)."
+      },
+      {
+        front: "18. Define Función Exponencial",
+        back: "Es \\(f(x)=a\\, b^x\\), con \\(b>0\\) y \\(b\\neq 1\\). Si \\(b>1\\), crece rápidamente; si \\(0<b<1\\), decrece."
+      },
+      {
+        front: "19. ¿Qué dominio suele tener la Exponencial?",
+        back: "Normalmente, todas las \\(x\\in \\mathbb{R}\\) son válidas. No hay restricciones para \\(b^x\\)."
+      },
+      {
+        front: "20. ¿Y la Función Logarítmica?",
+        back: "Es la inversa de la exponencial: \\(f(x)=\\log_b(x)\\), definida solo para \\(x>0\\)."
+      },
+      {
+        front: "21. ¿Por qué una función logarítmica no puede tomar \\(x\\leq 0\\)?",
+        back: "Porque \\(\\log_b(x)\\) no está definida para \\(x\\leq 0\\). No existe logaritmo de números no positivos."
+      },
+      {
+        front: "22. ¿En qué consiste la Interpolación Lineal?",
+        back: "Se aproxima un conjunto de datos con una recta \\(y=a x + b\\), útil para predecir valores entre observaciones."
+      },
+      {
+        front: "23. ¿Y la Interpolación Cuadrática?",
+        back: "Se ajusta una parábola \\(y=a x^2 + b x + c\\) a datos puntuales, captando curvaturas que la lineal no puede."
+      },
+      {
+        front: "24. ¿Cómo identificas una Función Par?",
+        back: "Si \\(f(-x)=f(x)\\) para todo \\(x\\) del dominio, la gráfica es simétrica respecto al eje Y."
+      },
+      {
+        front: "25. ¿Cuándo es una Función Impar?",
+        back: "Si \\(f(-x)=-f(x)\\) para todo \\(x\\). La gráfica es simétrica respecto al origen."
+      }
+    ];
+
+    let currentIndex = 0;
+    let timeLeft = 10;    // 10 segundos
+    let canFlip = false;
+    let timerRef = null;
+
+    function startFlashcards() {
+      // Ocultar pantalla de bienvenida
+      document.getElementById("welcomeScreen").style.display = "none";
+      // Mostrar el contenedor de flashcards
+      document.getElementById("flashcardContainer").style.display = "block";
+
+      currentIndex = 0;
+      loadCard(currentIndex);
+      startTimer();
+    }
+
+    function loadCard(index) {
+      // Reinicio de la tarjeta
+      const flashEl = document.getElementById("flashcard");
+      flashEl.classList.remove("flipped");
+      flashEl.style.cursor = "not-allowed";
+      canFlip = false;
+
+      const frontEl = document.getElementById("flashcardFront");
+      const backEl = document.getElementById("flashcardBack");
+
+      // Mostrar la pregunta, con la leyenda "Espera 10s antes de girar..." en nueva línea, centrado
+      frontEl.innerHTML = 
+        "<h3 style='margin-bottom:12px;'>" + flashcards[index].front + "</h3>" +
+        "<p style='text-align:center;'>Espera 10s antes de girar...</p>";
+
+      // Respuesta en la parte trasera
+      backEl.innerHTML  = "<p>" + flashcards[index].back + "</p>";
+
+      // Actualizar progreso
+      document.getElementById("progressText").textContent =
+        "Tarjeta " + (index + 1) + " de " + flashcards.length;
+      const progressPercentage = (index / (flashcards.length - 1)) * 100;
+      document.getElementById("progressFill").style.width = progressPercentage + "%";
+
+      // Quitar motivación
+      document.getElementById("motivation").textContent = "";
+
+      // Forzar render de KaTeX para el nuevo contenido
+      if (typeof renderMathInElement === "function") {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ]
+        });
+      }
+    }
+
+    function startTimer() {
+      const timerEl = document.getElementById("timer");
+      timeLeft = 10;
+      timerEl.style.color = "#E74C3C";
+      hideNavButtons();
+
+      if (timerRef) clearInterval(timerRef);
+
+      timerRef = setInterval(function(){
+        timeLeft--;
+        if (timeLeft > 0) {
+          timerEl.textContent = "Tiempo restante: " + timeLeft + "s";
+        } else {
+          clearInterval(timerRef);
+          timerEl.textContent = "¡Haz clic para girar!";
+          canFlip = true;
+          document.getElementById("flashcard").style.cursor = "pointer";
+        }
+      }, 1000);
+    }
+
+    function flipCard() {
+      if (canFlip) {
+        const flashEl = document.getElementById("flashcard");
+        const isFlipped = flashEl.classList.contains("flipped");
+        if (!isFlipped) {
+          // Gira a la parte trasera
+          flashEl.classList.add("flipped");
+          showNavButtons();
+          document.getElementById("motivation").textContent =
+            "¡Genial! Usa Anterior/Siguiente para repasar o avanzar.";
+        } else {
+          // Vuelve al frente
+          flashEl.classList.remove("flipped");
+          hideNavButtons();
+          document.getElementById("motivation").textContent = "";
+        }
+      }
+    }
+
+    function nextCard() {
+      if (currentIndex < flashcards.length - 1) {
+        currentIndex++;
+        loadCard(currentIndex);
+        startTimer();
+      }
+    }
+
+    function previousCard() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        loadCard(currentIndex);
+        startTimer();
+      }
+    }
+
+    function showNavButtons() {
+      const prevBtn = document.getElementById("prevButton");
+      const nextBtn = document.getElementById("nextButton");
+      // Mostrar 'Anterior' solo si no es la primera
+      if (currentIndex > 0) {
+        prevBtn.style.display = "inline-block";
+        prevBtn.classList.add("active");
+      } else {
+        prevBtn.style.display = "none";
+      }
+      // Mostrar 'Siguiente' solo si no es la última
+      if (currentIndex < flashcards.length - 1) {
+        nextBtn.style.display = "inline-block";
+        nextBtn.classList.add("active");
+      } else {
+        nextBtn.style.display = "none";
+      }
+    }
+
+    function hideNavButtons() {
+      const prevBtn = document.getElementById("prevButton");
+      const nextBtn = document.getElementById("nextButton");
+      prevBtn.style.display = "none";
+      nextBtn.style.display = "none";
+      prevBtn.classList.remove("active");
+      nextBtn.classList.remove("active");
+    }
+
+    // Evento para flip al hacer click en la tarjeta
+    window.addEventListener("DOMContentLoaded", function(){
+      document.getElementById("flashcard").addEventListener("click", flipCard);
+    });
+  </script>
+</body>
+</html>
